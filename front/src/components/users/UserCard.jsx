@@ -40,7 +40,7 @@ export default function UserCard(props) {
     }
 
     return (
-        <Row>
+        <Row className="mt-3">
             <Col className="col-md-6 m-auto">
                 <Card>
                     <CardBody>

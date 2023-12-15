@@ -121,8 +121,9 @@ private User retrieveUserFromContext() {
         post.setHeader(sPostDTO.getHeader());
         post.setText(sPostDTO.getText());
         post.setCreationTimestamp(new Timestamp(date.getTime()));
-        post.setImagePath(createImage(sPostDTO.getImage()));
-
+        if (sPostDTO.getImage() != null) {
+            post.setImagePath(createImage(sPostDTO.getImage()));
+        }
         return post;
     }
 

@@ -1,4 +1,4 @@
-import {Card, CardBody, CardImg, Col, Container, Row} from "react-bootstrap";
+import {Col, Container, Row} from "react-bootstrap";
 import React, {useEffect, useState} from "react";
 import UserCard from "./UserCard";
 import axios from "axios";
@@ -16,6 +16,7 @@ const requestUsers = async () => {
         });
         setUsers(newUsers.data.users);
         setHasNextUsers(newUsers.data.has_next);
+        console.log(newUsers);
     } catch (e) {
         console.log(e.response);
         if (e.response.status === 401) {
@@ -41,13 +42,13 @@ const requestUsers = async () => {
             <Row className="justify-content-center mt-3">
                 <Col className="col-lg-6">
                     <ul className="pagination d-flex justify-content-center">
-                        <li className="page-item"><a className="page-link" href="#" onClick={(e) => {
+                        <li className="page-item"><a className="page-link" href="#" onClick={() => {
                             if (page !== 0) {
                                 setPage(page - 1);
                             }
                         }}>&lt;</a></li>
                         <li className="page-item"><a className="page-link active">{page + 1}</a></li>
-                        <li className="page-item"><a className="page-link" href="#" onClick={(e) => {
+                        <li className="page-item"><a className="page-link" href="#" onClick={() => {
                             if (hasNextUsers) {
                                 setPage(page + 1);
                             }

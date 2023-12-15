@@ -1,5 +1,4 @@
 import {Card, CardBody, Col, Row} from "react-bootstrap";
-import {CiHeart} from "react-icons/ci";
 import React, {useState} from "react";
 import {FaHeart} from "react-icons/fa";
 import axios from "axios";
@@ -69,12 +68,12 @@ export default function Post(props) {
                         <p>
                             {props.text}
                         </p>
-                        <a href="javascript:void(0)" className="ui-rect ui-bg-cover"
-                           style={{backgroundImage: `url('${"http://localhost:8080" + props.image_url}')`}}></a>
+                        {props.image_url ? <a href="javascript:void(0)" className="ui-rect ui-bg-cover"
+                           style={{backgroundImage: `url('${"http://localhost:8080" + props.image_url}')`}}></a> : <></>}
                     </CardBody>
                     <div className="card-footer">
                         <div className='d-inline-block'>
-                            <FaHeart className="ci-heart" size={30} color={colorLike} onClick={(e) => {
+                            <FaHeart className="ci-heart" size={30} color={colorLike} onClick={() => {
                                 if (colorLike === "red") {
                                     setColorLike("darkGrey");
                                     dislike();
