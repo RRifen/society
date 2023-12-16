@@ -12,4 +12,5 @@ public class SPostDto {
     @NotEmpty(message = "Post text shouldn't be empty")
     private String text;
     private MultipartFile image;
+    private MultipartFile[] files;
 }

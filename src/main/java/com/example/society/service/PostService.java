@@ -1,11 +1,14 @@
 package com.example.society.service;
 
+import com.example.society.dtos.FileDTO;
 import com.example.society.dtos.PagePostsDto;
 import com.example.society.dtos.RPostDto;
 import com.example.society.dtos.SPostDto;
 import com.example.society.exceptions.AppError;
 import com.example.society.models.Post;
+import com.example.society.models.PostFile;
 import com.example.society.models.User;
+import com.example.society.repositories.PostFilesRepository;
 import com.example.society.repositories.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,25 +29,27 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class PostService {
 
     private final UserService userService;
     private final PostRepository postRepository;
+    private final PostFilesRepository postFilesRepository;
     private final SimpleDateFormat timestampDateFormat;
 
     @Value("${posts.path}")
-    private String BASE_PATH;
+    private String POSTS_PATH;
+
+    @Value("${files.path}")
+    private String FILES_PATH;
 
     @Autowired
-    public PostService(UserService userService, PostRepository postRepository, SimpleDateFormat timestampDateFormat) {
+    public PostService(UserService userService, PostRepository postRepository, PostFilesRepository postFilesRepository, SimpleDateFormat timestampDateFormat) {
         this.userService = userService;
         this.postRepository = postRepository;
+        this.postFilesRepository = postFilesRepository;
         this.timestampDateFormat = timestampDateFormat;
     }
 
@@ -57,48 +62,59 @@ public class PostService {
         return ResponseEntity.ok(new PagePostsDto(rPosts));
     }
 
-    private RPostDto convert(User user, Post post) {
-        if (postRepository.checkPostByLike(user.getId(), post.getId())) {
-            return new RPostDto(post, true);
-        }
-        return new RPostDto(post, false);
+    private RPostDto convert(User user, Post post, List<PostFile> files) {
+        boolean isLiked = postRepository.checkPostByLike(user.getId(), post.getId());
+        return new RPostDto(post, isLiked, convert(files));
     }
 
-@Transactional(readOnly = true)
-public ResponseEntity<?> readUserPosts() {
-    User author = retrieveUserFromContext();
+    private List<FileDTO> convert(List<PostFile> files) {
+        return files.stream().map((file) -> new FileDTO(file.getFilePath(), file.getFilename())).toList();
+    }
 
-    List<Post> posts = postRepository.findAllByUserOrderByCreationTimestampDesc(author);
-    List<RPostDto> rPosts = posts.stream().map((post) -> convert(author, post)).toList();
-    return ResponseEntity.ok(rPosts);
-}
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> readUserPosts() {
+        User author = retrieveUserFromContext();
 
-@Transactional(readOnly = true)
-public ResponseEntity<?> readPostsByHeader(String header, int pageNumber, int pageSize) {
-    Pageable pageable = PageRequest.of(pageNumber, pageSize);
+        List<Post> posts = postRepository.findAllByUserOrderByCreationTimestampDesc(author);
+        List<RPostDto> rPosts = posts.stream().map((post) -> {
+            List<PostFile> files = postFilesRepository.findFileByPostId(post.getId());
+            return convert(author, post, files);
+        }).toList();
+        return ResponseEntity.ok(rPosts);
+    }
 
-    Page<Post> posts = postRepository.findAllByHeaderContainingOrderByCreationTimestampDesc(header, pageable);
-    Page<RPostDto> rPosts = retrievePageOfRPostsDto(posts);
-    return ResponseEntity.ok(new PagePostsDto(rPosts));
-}
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> readPostsByHeader(String header, int pageNumber, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
 
-private Page<RPostDto> retrievePageOfRPostsDto(Page<Post> posts) {
-    User user = retrieveUserFromContext();
-    return posts.map((post) -> convert(user, post));
-}
+        Page<Post> posts = postRepository.findAllByHeaderContainingOrderByCreationTimestampDesc(header, pageable);
+        Page<RPostDto> rPosts = retrievePageOfRPostsDto(posts);
+        return ResponseEntity.ok(new PagePostsDto(rPosts));
+    }
 
-private User retrieveUserFromContext() {
-    String username = retrieveUsernameFromContext();
-    return userService.findByUsername(username)
-            .orElseThrow(RuntimeException::new);
-}
+    private Page<RPostDto> retrievePageOfRPostsDto(Page<Post> posts) {
+        User user = retrieveUserFromContext();
+        return posts.map((post) -> {
+            List<PostFile> files = postFilesRepository.findFileByPostId(post.getId());
+            return convert(user, post, files);
+        });
+    }
+
+    private User retrieveUserFromContext() {
+        String username = retrieveUsernameFromContext();
+        return userService.findByUsername(username)
+                .orElseThrow(RuntimeException::new);
+    }
 
     @Transactional
     public ResponseEntity<?> createPost(SPostDto sPostDTO) {
         Post post;
+        List<PostFile> files = Collections.emptyList();
         try {
             post = createNewPost(sPostDTO);
-        } catch(Exception e) {
+            post = postRepository.save(post);
+            files = saveFiles(sPostDTO, post);
+        } catch (Exception e) {
             return ResponseEntity.internalServerError().body(
                     new AppError(
                             HttpStatus.INTERNAL_SERVER_ERROR.value(),
@@ -107,9 +123,8 @@ private User retrieveUserFromContext() {
                     )
             );
         }
-        post = postRepository.save(post);
         return ResponseEntity.created(createURI(post.getId()))
-                .body(new RPostDto(post, false));
+                .body(new RPostDto(post, false, convert(files)));
     }
 
     private Post createNewPost(SPostDto sPostDTO) throws Exception {
@@ -127,13 +142,44 @@ private User retrieveUserFromContext() {
         return post;
     }
 
+    private List<PostFile> saveFiles(SPostDto sPostDTO, Post post) throws Exception {
+        List<PostFile> files = new ArrayList<>();
+        for (MultipartFile multipartFile : sPostDTO.getFiles()) {
+            if (multipartFile != null) {
+                PostFile postFile = new PostFile();
+                String filePath = createFile(multipartFile, post.getId());
+                postFile.setFilePath(filePath);
+                postFile.setFilename(multipartFile.getOriginalFilename());
+
+                postFile.setPost(post);
+                files.add(postFilesRepository.save(postFile));
+            }
+        }
+        return files;
+    }
+
+    private String createFile(MultipartFile file, Long postId) throws Exception {
+        String[] fileParts = Objects.requireNonNull(file.getOriginalFilename()).split("\\.");
+        FileOutputStream fos;
+        UUID uuid = UUID.randomUUID();
+        String fileName = postId + "_" + uuid + "." + fileParts[fileParts.length - 1];
+        try {
+            fos = new FileOutputStream(FILES_PATH + fileName);
+            fos.write(file.getBytes());
+            fos.close();
+        } catch (IOException e) {
+            throw new Exception(e);
+        }
+        return fileName;
+    }
+
     private String createImage(MultipartFile image) throws Exception {
         String[] fileParts = Objects.requireNonNull(image.getOriginalFilename()).split("\\.");
         FileOutputStream fos;
         Long postId = postRepository.lastId() + 1;
         String fileName = postId + "." + fileParts[fileParts.length - 1];
         try {
-            fos = new FileOutputStream(BASE_PATH + fileName);
+            fos = new FileOutputStream(POSTS_PATH + fileName);
             fos.write(image.getBytes());
             fos.close();
         } catch (IOException e) {
@@ -194,11 +240,11 @@ private User retrieveUserFromContext() {
         try {
             postRepository.likePost(retrieveUserFromContext().getId(), postId);
             return ResponseEntity.ok().build();
-        } catch(Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(new AppError(
-                  HttpStatus.BAD_REQUEST.value(),
-                  e.getMessage(),
-                  timestampDateFormat.format(new Date())
+                    HttpStatus.BAD_REQUEST.value(),
+                    e.getMessage(),
+                    timestampDateFormat.format(new Date())
             ));
         }
     }
@@ -208,7 +254,7 @@ private User retrieveUserFromContext() {
         try {
             postRepository.dislikePost(retrieveUserFromContext().getId(), postId);
             return ResponseEntity.ok().build();
-        } catch(Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(new AppError(
                     HttpStatus.BAD_REQUEST.value(),
                     e.getMessage(),
@@ -227,11 +273,14 @@ private User retrieveUserFromContext() {
         boolean hasNext = false;
         if (posts.size() == pageSize + 1) {
             hasNext = true;
-            posts.remove((int)pageSize);
+            posts.remove((int) pageSize);
         }
 
         List<RPostDto> rPosts = posts.stream()
-                .map((post) -> convert(user, post))
+                .map((post) -> {
+                    List<PostFile> files = postFilesRepository.findFileByPostId(post.getId());
+                    return convert(user, post, files);
+                })
                 .toList();
         PagePostsDto page = new PagePostsDto(rPosts, hasNext, pageNumber, pageSize, -1);
         return ResponseEntity.ok(page);

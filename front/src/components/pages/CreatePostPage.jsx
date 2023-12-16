@@ -1,7 +1,6 @@
 import React, {useState} from "react";
 import {Col, Container, Row} from "react-bootstrap";
 import axios from "axios";
-import {createUserInfo} from "../../App";
 import {useNavigate} from "react-router-dom";
 
 export default function CreatePostPage() {
@@ -9,15 +8,17 @@ export default function CreatePostPage() {
     let [header, setHeader] = useState("");
     let [text, setText] = useState("");
     let [postPic, setPostPic] = useState(null);
+    let [files, setFiles] = useState([]);
     let navigate = useNavigate();
 
-    async function updateProfile(e) {
+    async function createPost(e) {
         e.preventDefault()
         try {
             await axios.postForm(`http://localhost:8080/api/posts`, {
                 header,
                 text,
-                image: postPic
+                image: postPic,
+                files: files
             },{
                 headers: {
                     Authorization: "Bearer " + localStorage.getItem('token')
@@ -27,6 +28,7 @@ export default function CreatePostPage() {
             localStorage.setItem('postsCount', postsCount);
             navigate("/profile")
         } catch(e) {
+            console.log(e);
             if (e.response.status === 401) {
                 localStorage.setItem('token', '');
                 navigate("/");
@@ -34,9 +36,16 @@ export default function CreatePostPage() {
         }
     }
 
-    const handleFileChange = (e) => {
+    const handleImageChange = (e) => {
         if (e.target.files) {
             setPostPic(e.target.files[0]);
+        }
+    }
+
+    const handleFilesChange = (e) => {
+        if (e.target.files) {
+            setFiles([...e.target.files]);
+            console.log(files);
         }
     }
 
@@ -44,7 +53,7 @@ export default function CreatePostPage() {
         <Container className="mt-3">
             <Row>
                 <Col className="col-md-6 m-auto  border border-light shadow rounded p-3">
-                    <form onSubmit={updateProfile}>
+                    <form onSubmit={createPost}>
                         <div className="mb-3">
                             <label htmlFor="createPostHeader" className="form-label">Заголовок поста</label>
                             <input onChange={(e) => setHeader(e.target.value)} value={header} name="image" type="text"
@@ -58,8 +67,13 @@ export default function CreatePostPage() {
                         </div>
                         <div className="mb-3">
                             <label htmlFor="createPostPic" className="form-label">Добавить изображение к посту</label>
-                            <input onChange={handleFileChange} name="image" type="file"
+                            <input onChange={handleImageChange} name="image" type="file"
                                    accept="image/png, image/jpeg" className="form-control" id="createPostPic"/>
+                        </div>
+                        <div className="mb-3">
+                            <label htmlFor="createPostFiles" className="form-label">Можете добавить файлы</label>
+                            <input onChange={handleFilesChange} name="files" type="file" multiple
+                                   accept=".pdf,.docx,.doc" className="form-control" id="createPostFiles"/>
                         </div>
                         <button type="submit" className="btn btn-primary">Создать</button>
                     </form>

@@ -3,6 +3,7 @@ import React, {useState} from "react";
 import {FaHeart} from "react-icons/fa";
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
+import Files from "./Files";
 
 export default function Post(props) {
     let [colorLike, setColorLike] = useState(props.liked ? "red" : "darkGrey");
@@ -19,13 +20,13 @@ export default function Post(props) {
 
     async function like() {
         try {
-            await axios.post(`http://localhost:8080/api/posts/${props.id}/like`, {},{
+            await axios.post(`http://localhost:8080/api/posts/${props.id}/like`, {}, {
                 headers: {
                     Authorization: "Bearer " + localStorage.getItem('token')
                 }
             });
             setColorLike("red");
-        } catch(e) {
+        } catch (e) {
             if (e.response.status === 401) {
                 localStorage.setItem('token', '');
                 navigate("/");
@@ -41,7 +42,7 @@ export default function Post(props) {
                 }
             });
             setColorLike("darkGrey");
-        } catch(e) {
+        } catch (e) {
             if (e.response.status === 401) {
                 localStorage.setItem('token', '');
                 navigate("/");
@@ -68,8 +69,9 @@ export default function Post(props) {
                         <p>
                             {props.text}
                         </p>
-                        {props.image_url ? <a href="javascript:void(0)" className="ui-rect ui-bg-cover"
-                           style={{backgroundImage: `url('${"http://localhost:8080" + props.image_url}')`}}></a> : <></>}
+                        {props.image_url ? <a href="#" className="ui-rect ui-bg-cover"
+                                              style={{backgroundImage: `url('${"http://localhost:8080" + props.image_url}')`}}></a> : <></>}
+                        {props.files.length > 0 && <Files files={props.files}/>}
                     </CardBody>
                     <div className="card-footer">
                         <div className='d-inline-block'>
@@ -77,8 +79,7 @@ export default function Post(props) {
                                 if (colorLike === "red") {
                                     setColorLike("darkGrey");
                                     dislike();
-                                }
-                                else {
+                                } else {
                                     setColorLike("red");
                                     like();
                                 }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 @Data
 public class RPostDto {
@@ -19,8 +20,9 @@ public class RPostDto {
     @JsonProperty("json_pic")
     private String userPic;
     private String username;
+    private List<FileDTO> files;
 
-    public RPostDto(Post post, boolean isLiked) {
+    public RPostDto(Post post, boolean isLiked, List<FileDTO> files) {
         this.id = post.getId();
         this.header = post.getHeader();
         this.text = post.getText();
@@ -31,5 +33,6 @@ public class RPostDto {
         this.isLiked = isLiked;
         this.userPic = post.getUser().getImagePath();
         this.username = post.getUser().getUsername();
+        this.files = files;
     }
 }
