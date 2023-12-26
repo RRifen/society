@@ -1,9 +1,9 @@
 package com.example.society.service;
 
-import com.example.society.dtos.JwtRequest;
-import com.example.society.dtos.JwtResponse;
-import com.example.society.dtos.RegistrationUserDto;
-import com.example.society.dtos.UserDto;
+import com.example.society.dtos.jwt.JwtRequest;
+import com.example.society.dtos.jwt.JwtResponse;
+import com.example.society.dtos.users.RegistrationUserDto;
+import com.example.society.dtos.users.UserDto;
 import com.example.society.exceptions.AppError;
 import com.example.society.models.User;
 import com.example.society.utils.JwtTokenUtils;

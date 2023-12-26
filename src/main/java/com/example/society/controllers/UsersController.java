@@ -1,6 +1,6 @@
 package com.example.society.controllers;
 
-import com.example.society.dtos.UpdateUserDto;
+import com.example.society.dtos.users.UpdateUserDto;
 import com.example.society.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +38,11 @@ public class UsersController {
     @PostMapping("/{id}/unfollow")
     public ResponseEntity<?> unfollowUser(@PathVariable("id") Long userId) {
         return userService.unfollowUser(userId);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable("id") Long userId) {
+        return userService.deleteUser(userId);
     }
 
 }

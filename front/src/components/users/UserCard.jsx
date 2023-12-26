@@ -18,7 +18,7 @@ export default function UserCard(props) {
         } catch(e) {
             if (e.response.status === 401) {
                 localStorage.setItem('token', '');
-                navigate("/");
+                navigate("/auth");
             }
         }
     }
@@ -34,7 +34,7 @@ export default function UserCard(props) {
         } catch(e) {
             if (e.response.status === 401) {
                 localStorage.setItem('token', '');
-                navigate("/");
+                navigate("/auth");
             }
         }
     }

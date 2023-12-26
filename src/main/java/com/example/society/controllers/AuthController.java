@@ -1,7 +1,7 @@
 package com.example.society.controllers;
 
-import com.example.society.dtos.JwtRequest;
-import com.example.society.dtos.RegistrationUserDto;
+import com.example.society.dtos.jwt.JwtRequest;
+import com.example.society.dtos.users.RegistrationUserDto;
 import com.example.society.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

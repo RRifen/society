@@ -1,15 +1,16 @@
 package com.example.society.service;
 
-import com.example.society.dtos.FileDTO;
-import com.example.society.dtos.PagePostsDto;
-import com.example.society.dtos.RPostDto;
-import com.example.society.dtos.SPostDto;
+import com.example.society.dtos.files.FileDto;
+import com.example.society.dtos.posts.PagePostsDto;
+import com.example.society.dtos.posts.RPostDto;
+import com.example.society.dtos.posts.SPostDto;
 import com.example.society.exceptions.AppError;
 import com.example.society.models.Post;
 import com.example.society.models.PostFile;
 import com.example.society.models.User;
 import com.example.society.repositories.PostFilesRepository;
 import com.example.society.repositories.PostRepository;
+import com.example.society.utils.ContextUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -17,8 +18,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -38,6 +37,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final PostFilesRepository postFilesRepository;
     private final SimpleDateFormat timestampDateFormat;
+    private final ContextUtils contextUtils;
 
     @Value("${posts.path}")
     private String POSTS_PATH;
@@ -46,11 +46,12 @@ public class PostService {
     private String FILES_PATH;
 
     @Autowired
-    public PostService(UserService userService, PostRepository postRepository, PostFilesRepository postFilesRepository, SimpleDateFormat timestampDateFormat) {
+    public PostService(UserService userService, PostRepository postRepository, PostFilesRepository postFilesRepository, SimpleDateFormat timestampDateFormat, ContextUtils contextUtils) {
         this.userService = userService;
         this.postRepository = postRepository;
         this.postFilesRepository = postFilesRepository;
         this.timestampDateFormat = timestampDateFormat;
+        this.contextUtils = contextUtils;
     }
 
     @Transactional(readOnly = true)
@@ -67,13 +68,13 @@ public class PostService {
         return new RPostDto(post, isLiked, convert(files));
     }
 
-    private List<FileDTO> convert(List<PostFile> files) {
-        return files.stream().map((file) -> new FileDTO(file.getFilePath(), file.getFilename())).toList();
+    private List<FileDto> convert(List<PostFile> files) {
+        return files.stream().map((file) -> new FileDto(file.getFilePath(), file.getFilename())).toList();
     }
 
     @Transactional(readOnly = true)
     public ResponseEntity<?> readUserPosts() {
-        User author = retrieveUserFromContext();
+        User author = contextUtils.retrieveUserFromContext();
 
         List<Post> posts = postRepository.findAllByUserOrderByCreationTimestampDesc(author);
         List<RPostDto> rPosts = posts.stream().map((post) -> {
@@ -93,17 +94,11 @@ public class PostService {
     }
 
     private Page<RPostDto> retrievePageOfRPostsDto(Page<Post> posts) {
-        User user = retrieveUserFromContext();
+        User user = contextUtils.retrieveUserFromContext();
         return posts.map((post) -> {
             List<PostFile> files = postFilesRepository.findFileByPostId(post.getId());
             return convert(user, post, files);
         });
-    }
-
-    private User retrieveUserFromContext() {
-        String username = retrieveUsernameFromContext();
-        return userService.findByUsername(username)
-                .orElseThrow(RuntimeException::new);
     }
 
     @Transactional
@@ -128,7 +123,7 @@ public class PostService {
     }
 
     private Post createNewPost(SPostDto sPostDTO) throws Exception {
-        User author = retrieveUserFromContext();
+        User author = contextUtils.retrieveUserFromContext();
         Post post = new Post();
         Date date = new Date();
 
@@ -199,7 +194,6 @@ public class PostService {
 
     @Transactional
     public ResponseEntity<?> deletePost(Long id) {
-        String username = retrieveUsernameFromContext();
 
         Optional<Post> postOptional = postRepository.findById(id);
         if (postOptional.isEmpty()) {
@@ -214,31 +208,16 @@ public class PostService {
         }
 
         Post post = postOptional.get();
-        if (!Objects.equals(post.getUser().getUsername(), username)) {
-            return new ResponseEntity<>(
-                    new AppError(
-                            HttpStatus.FORBIDDEN.value(),
-                            "Forbidden action",
-                            timestampDateFormat.format(new Date())
-                    ),
-                    HttpStatus.FORBIDDEN
-            );
-        }
-
         postRepository.delete(post);
         return ResponseEntity.ok()
                 .build();
     }
 
-    private String retrieveUsernameFromContext() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication.getPrincipal().toString();
-    }
-
     @Transactional
     public ResponseEntity<?> likePost(Long postId) {
         try {
-            postRepository.likePost(retrieveUserFromContext().getId(), postId);
+            Long userId = contextUtils.retrieveUserFromContext().getId();
+            postRepository.likePost(userId, postId);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new AppError(
@@ -252,7 +231,8 @@ public class PostService {
     @Transactional
     public ResponseEntity<?> dislikePost(Long postId) {
         try {
-            postRepository.dislikePost(retrieveUserFromContext().getId(), postId);
+            Long userId = contextUtils.retrieveUserFromContext().getId();
+            postRepository.dislikePost(userId, postId);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new AppError(
@@ -265,7 +245,7 @@ public class PostService {
 
     @Transactional
     public ResponseEntity<?> readFollowUsersPosts(Integer pageNumber, Integer pageSize) {
-        User user = retrieveUserFromContext();
+        User user = contextUtils.retrieveUserFromContext();
         Long followerId = user.getId();
         Long offset = (long) pageNumber * pageSize;
 
@@ -286,11 +266,18 @@ public class PostService {
         return ResponseEntity.ok(page);
     }
 
-    public Long getPostCount(User user) {
-        return postRepository.countPostsByUser(user);
+    public ResponseEntity<?> readPostsWithoutUser(Integer pageNumber, Integer pageSize) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+
+        Page<Post> posts = postRepository.findAllByOrderByCreationTimestampDesc(pageable);
+        Page<RPostDto> rPosts = retrievePageOfRPostsDtoWithoutUser(posts);
+        return ResponseEntity.ok(new PagePostsDto(rPosts));
     }
 
-    public Long getFollowersCount(User user) {
-        return postRepository.countFollowersByUser(user.getId());
+    private Page<RPostDto> retrievePageOfRPostsDtoWithoutUser(Page<Post> posts) {
+        return posts.map((post) -> {
+            List<PostFile> files = postFilesRepository.findFileByPostId(post.getId());
+            return new RPostDto(post, false, convert(files));
+        });
     }
 }

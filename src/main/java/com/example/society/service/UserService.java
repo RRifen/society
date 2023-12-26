@@ -1,9 +1,9 @@
 package com.example.society.service;
 
-import com.example.society.dtos.PageUsersDto;
-import com.example.society.dtos.RegistrationUserDto;
-import com.example.society.dtos.UpdateUserDto;
-import com.example.society.dtos.UserDto;
+import com.example.society.dtos.users.PageUsersDto;
+import com.example.society.dtos.users.RegistrationUserDto;
+import com.example.society.dtos.users.UpdateUserDto;
+import com.example.society.dtos.users.UserDto;
 import com.example.society.exceptions.AppError;
 import com.example.society.models.Role;
 import com.example.society.models.User;
@@ -151,6 +151,12 @@ public class UserService implements UserDetailsService {
         if (!user.getId().equals(followingId)) {
             userRepository.unfollow(user.getId(), followingId);
         }
+        return ResponseEntity.ok().build();
+    }
+
+    @Transactional
+    public ResponseEntity<?> deleteUser(Long id) {
+        userRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }
 

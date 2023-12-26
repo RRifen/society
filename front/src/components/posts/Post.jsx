@@ -29,7 +29,7 @@ export default function Post(props) {
         } catch (e) {
             if (e.response.status === 401) {
                 localStorage.setItem('token', '');
-                navigate("/");
+                navigate("/auth");
             }
         }
     }
@@ -45,7 +45,7 @@ export default function Post(props) {
         } catch (e) {
             if (e.response.status === 401) {
                 localStorage.setItem('token', '');
-                navigate("/");
+                navigate("/auth");
             }
         }
     }

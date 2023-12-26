@@ -1,11 +1,13 @@
 package com.example.society.controllers;
 
-import com.example.society.dtos.SPostDto;
+import com.example.society.dtos.posts.SPostDto;
 import com.example.society.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -58,6 +60,7 @@ public class PostsController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deletePost(@PathVariable("id") Long id) {
         return postService.deletePost(id);
     }

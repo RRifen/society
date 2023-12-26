@@ -27,7 +27,7 @@ export default function RegistrationPage() {
                     }
                 });
             alert("Вы успешно зарегистрировались");
-            navigate('/');
+            navigate('/auth');
         } catch (e) {
             alert(e.response?.data?.message || "Error");
         }
@@ -68,7 +68,7 @@ export default function RegistrationPage() {
                     </div>
                 </form>
                 <div className="bg-white">
-                    <a href="/">Войти в аккаунт</a>
+                    <a href="/auth">Войти в аккаунт</a>
                 </div>
             </Container>
         </div>

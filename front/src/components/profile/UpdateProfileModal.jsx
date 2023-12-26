@@ -1,9 +1,7 @@
 import {Button, ModalBody, ModalDialog, ModalFooter, ModalHeader, ModalTitle} from "react-bootstrap";
-import React, {useContext, useState} from "react";
+import React, {useState} from "react";
 import axios from "axios";
-import {useDispatch, useSelector} from "react-redux";
 import {useNavigate} from "react-router-dom";
-import {loadUserInfo} from "../../store/auth/authReducer";
 import {createUserInfo, UserData} from "../../App";
 
 export default function UpdateProfile() {
@@ -33,7 +31,7 @@ export default function UpdateProfile() {
         } catch(e) {
             if (e.response.status === 401) {
                 localStorage.setItem('token', '');
-                navigate("/");
+                navigate("/auth");
             }
         }
     }

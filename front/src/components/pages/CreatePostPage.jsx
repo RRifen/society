@@ -31,7 +31,7 @@ export default function CreatePostPage() {
             console.log(e);
             if (e.response.status === 401) {
                 localStorage.setItem('token', '');
-                navigate("/");
+                navigate("/auth");
             }
         }
     }

@@ -30,7 +30,7 @@ export default function PostsFeedContainer() {
             console.log(e.response);
             if (e.response.status === 401) {
                 localStorage.setItem('token', '');
-                navigate("/");
+                navigate("/auth");
             }
         }
 

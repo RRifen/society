@@ -34,7 +34,7 @@ export default function Navigation({children, userQuery, setUserQuery, setRender
                                 <NavLink href="#" onClick={(e) => {
                                     e.preventDefault();
                                     localStorage.setItem('token', '');
-                                    navigate("/");
+                                    navigate("/auth");
                                 }}>Выйти из аккаунта</NavLink>
                             </NavItem>
                         </Navbar>

@@ -9,6 +9,8 @@ import ProfilePage from "./components/pages/ProfilePage";
 import SearchUsersPage from "./components/users/SearchUsersPage";
 import Navigation from "./components/nav/Navigation";
 import CreatePostPage from "./components/pages/CreatePostPage";
+import WithoutAuthorizationPage from "./components/pages/WithoutAuthorizationPage";
+import WANavigation from "./components/nav/WANavigation";
 
 export const getUserInfo = () => {
     return {
@@ -56,25 +58,31 @@ function App() {
     ) || localStorage.getItem('token');
 
     return (
-<BrowserRouter>
-    <Routes>
-        <Route path="/" element={<AuthorizationPage/>}></Route>
-        <Route path="/reg" element={<RegistrationPage/>}></Route>
-        <Route path="/feed"
-               element={isLoggedIn ? <Navigation {...navigationProps}><FeedPage/></Navigation> :
-                   <Navigate to="/"/>}></Route>
-        <Route path="/profile"
-               element={isLoggedIn ? <Navigation {...navigationProps}><ProfilePage/></Navigation> :
-                   <Navigate to="/"/>}></Route>
-        <Route path="/users"
-               element={isLoggedIn ? <Navigation {...navigationProps}><SearchUsersPage {...searchUsersPageProps}/></Navigation> :
-                   <Navigate to="/"/>}></Route>
-        <Route path="/create-post"
-               element={isLoggedIn ? <Navigation {...navigationProps}><CreatePostPage {...searchUsersPageProps}/></Navigation> :
-                   <Navigate to="/"/>}></Route>
-    </Routes>
-</BrowserRouter>
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<WANavigation ><WithoutAuthorizationPage/></WANavigation>}></Route>
+                <Route path="/auth" element={<AuthorizationPage/>}></Route>
+                <Route path="/reg" element={<RegistrationPage/>}></Route>
+                <Route path="/feed"
+                       element={isLoggedIn ? <Navigation {...navigationProps}><FeedPage/></Navigation> :
+                           <Navigate to="/auth"/>}></Route>
+                <Route path="/profile"
+                       element={isLoggedIn ? <Navigation {...navigationProps}><ProfilePage/></Navigation> :
+                           <Navigate to="/auth"/>}></Route>
+                <Route path="/users"
+                       element={isLoggedIn ?
+                           <Navigation {...navigationProps}><SearchUsersPage {...searchUsersPageProps}/></Navigation> :
+                           <Navigate to="/auth"/>}></Route>
+                <Route path="/create-post"
+                       element={isLoggedIn ?
+                           <Navigation {...navigationProps}><CreatePostPage {...searchUsersPageProps}/></Navigation> :
+                           <Navigate to="/auth"/>}></Route>
+            </Routes>
+        </BrowserRouter>
     );
 }
 
 export default App;
+
+export class UserData {
+}
