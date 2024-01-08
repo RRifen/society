@@ -38,14 +38,26 @@ export default function CreatePostPage() {
 
     const handleImageChange = (e) => {
         if (e.target.files) {
-            setPostPic(e.target.files[0]);
+            if (e.target.files[0].size > 104857600) {
+                alert("File is too big!")
+                e.target.value = ""
+            }
+            else {
+                setPostPic(e.target.files[0]);
+            }
         }
     }
 
     const handleFilesChange = (e) => {
         if (e.target.files) {
-            setFiles([...e.target.files]);
-            console.log(files);
+            let commonSize = Array.from(e.target.files).reduce((a, b) => a + b.size, 0)
+            if (commonSize > 104857600) {
+                alert("Files is too big!")
+                e.target.value = ""
+            }
+            else {
+                setFiles([...e.target.files]);
+            }
         }
     }
 

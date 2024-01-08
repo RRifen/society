@@ -1,10 +1,5 @@
 api:
     prefix: /api
-
-paths:
-    files: /media/rrifen/Data/Share/files
-    users: /media/rrifen/Data/Share/images/users
-    posts: /media/rrifen/Data/Share/images/posts
 jwt:
     lifetime: 30m
     secret: 3C5D269FEA31E8DAFCF6956275A3DLKSDFJLKS:DJ98Y*SDF&^&*SDTFHJSDBGKFSDUYYTF*&SDYF*(DUHSFLKSDNJHGUISHY&G*T*&SUJDGF
@@ -14,11 +9,12 @@ spring:
         url: jdbc:postgresql://db:5432/society
         username: postgres
     jpa:
-        properties:
-            hibernate:
-                dialect: org.hibernate.dialect.PostgreSQLDialect
         show-sql: true
     servlet:
         multipart:
             max-file-size: 100MB
             max-request-size: 100MB
+paths:
+    files: /app/files/
+    users: /app/users/
+    posts: /app/posts/

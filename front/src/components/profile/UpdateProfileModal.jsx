@@ -2,7 +2,7 @@ import {Button, ModalBody, ModalDialog, ModalFooter, ModalHeader, ModalTitle} fr
 import React, {useState} from "react";
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
-import {createUserInfo, UserData} from "../../App";
+import {createUserInfo} from "../../App";
 
 export default function UpdateProfile() {
     let navigate = useNavigate();
@@ -38,7 +38,13 @@ export default function UpdateProfile() {
 
     const handleFileChange = (e) => {
         if (e.target.files) {
-            setPicture(e.target.files[0]);
+            if (e.target.files[0].size > 104857600) {
+                alert("File is too big!")
+                e.target.value = ""
+            }
+            else {
+                setPicture(e.target.files[0]);
+            }
         }
     }
 

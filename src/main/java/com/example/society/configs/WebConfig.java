@@ -8,9 +8,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${posts.path}")
+    @Value("${paths.posts}")
     private String basePostsPath;
-    @Value("${users.path}")
+    @Value("${paths.users}")
     private String baseUsersPath;
 
     @Override

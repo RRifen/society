@@ -47,7 +47,7 @@ public class UserService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
     private final SimpleDateFormat timestampDateFormat;
 
-    @Value("${users.path}")
+    @Value("${paths.users}")
     private String BASE_PATH;
 
     @Autowired
@@ -189,8 +189,7 @@ public class UserService implements UserDetailsService {
 
     private User retrieveUserFromContext() {
         String username = retrieveUsernameFromContext();
-        User user = findByUsername(username)
+        return findByUsername(username)
                 .orElseThrow(RuntimeException::new);
-        return user;
     }
 }

@@ -11,6 +11,7 @@ import com.example.society.models.User;
 import com.example.society.repositories.PostFilesRepository;
 import com.example.society.repositories.PostRepository;
 import com.example.society.utils.ContextUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -31,23 +32,21 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Service
+@Slf4j
 public class PostService {
-
-    private final UserService userService;
     private final PostRepository postRepository;
     private final PostFilesRepository postFilesRepository;
     private final SimpleDateFormat timestampDateFormat;
     private final ContextUtils contextUtils;
 
-    @Value("${posts.path}")
+    @Value("${paths.posts}")
     private String POSTS_PATH;
 
-    @Value("${files.path}")
+    @Value("${paths.files}")
     private String FILES_PATH;
 
     @Autowired
-    public PostService(UserService userService, PostRepository postRepository, PostFilesRepository postFilesRepository, SimpleDateFormat timestampDateFormat, ContextUtils contextUtils) {
-        this.userService = userService;
+    public PostService(PostRepository postRepository, PostFilesRepository postFilesRepository, SimpleDateFormat timestampDateFormat, ContextUtils contextUtils) {
         this.postRepository = postRepository;
         this.postFilesRepository = postFilesRepository;
         this.timestampDateFormat = timestampDateFormat;
@@ -139,6 +138,7 @@ public class PostService {
 
     private List<PostFile> saveFiles(SPostDto sPostDTO, Post post) throws Exception {
         List<PostFile> files = new ArrayList<>();
+        if (sPostDTO.getFiles() == null) return Collections.emptyList();
         for (MultipartFile multipartFile : sPostDTO.getFiles()) {
             if (multipartFile != null) {
                 PostFile postFile = new PostFile();
@@ -159,7 +159,7 @@ public class PostService {
         UUID uuid = UUID.randomUUID();
         String fileName = postId + "_" + uuid + "." + fileParts[fileParts.length - 1];
         try {
-            fos = new FileOutputStream(FILES_PATH + fileName);
+            fos = new FileOutputStream(FILES_PATH + "/" + fileName);
             fos.write(file.getBytes());
             fos.close();
         } catch (IOException e) {

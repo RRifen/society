@@ -1,5 +1,6 @@
 package com.example.society.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -12,9 +13,11 @@ import java.io.IOException;
 
 @Service
 public class FileService {
+    @Value("${paths.files}")
+    private String filesPath;
     public ResponseEntity<?> downloadFile(String filename) {
         try {
-            File file = new File("files/" + filename);
+            File file = new File(filesPath + filename);
             InputStreamResource resource = new InputStreamResource(new FileInputStream(file));
 
             HttpHeaders headers = new HttpHeaders();
